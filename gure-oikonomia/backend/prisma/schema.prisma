@@ -10,7 +10,7 @@ datasource db {
 // ENUMS
 // =========================================================
 
-enum Rol {
+enum Role {
   CLIENTE
   ADMIN
 }
@@ -46,14 +46,14 @@ enum TipoDescuento {
 // USUARIO Y AUTENTICACIÓN
 // =========================================================
 
-model Usuario {
+model User {
   id              Int       @id @default(autoincrement())
   email           String    @unique
   password        String // hash con bcrypt/argon2
   nombre          String?
   apellido        String?
   telefono        String?
-  rol             Rol       @default(CLIENTE)
+  role             Role      @default(CLIENTE)
   emailVerificado Boolean   @default(false)
   activo          Boolean   @default(true)
   createdAt       DateTime  @default(now())
@@ -78,29 +78,29 @@ model Usuario {
 model RefreshToken {
   id         Int      @id @default(autoincrement())
   token      String   @unique
-  usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   revocado   Boolean  @default(false)
   expiraEn   DateTime
   createdAt  DateTime @default(now())
   userAgent  String?
   ip         String?
 
-  @@index([usuarioId])
+  @@index([userId])
 }
 
 // Verificación de email y recuperación de contraseña
 model TokenVerificacion {
   id        Int                  @id @default(autoincrement())
   token     String               @unique
-  usuarioId Int
-  usuario   Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId Int
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   tipo      TipoTokenVerificacion
   usado     Boolean              @default(false)
   expiraEn  DateTime
   createdAt DateTime             @default(now())
 
-  @@index([usuarioId])
+  @@index([userId])
 }
 
 enum TipoTokenVerificacion {
@@ -110,8 +110,8 @@ enum TipoTokenVerificacion {
 
 model Direccion {
   id           Int      @id @default(autoincrement())
-  usuarioId    Int
-  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   etiqueta     String? // "Casa", "Trabajo"...
   nombreCompleto String
   calle        String
@@ -128,7 +128,7 @@ model Direccion {
   pedidosEnvio   Pedido[] @relation("DireccionEnvio")
   pedidosFactura Pedido[] @relation("DireccionFactura")
 
-  @@index([usuarioId])
+  @@index([userId])
 }
 
 // =========================================================
@@ -207,8 +207,8 @@ model MovimientoStock {
   tipo        TipoMovimientoStock
   cantidad    Int // positivo o negativo según el tipo
   motivo      String? // "Venta #123", "Reposición proveedor X"...
-  usuarioId   Int? // quién generó el movimiento (admin), null si fue automático
-  usuario     Usuario?            @relation(fields: [usuarioId], references: [id])
+  userId   Int? // quién generó el movimiento (admin), null si fue automático
+  user     User?            @relation(fields: [userId], references: [id])
   createdAt   DateTime            @default(now())
 
   @@index([productoId])
@@ -220,8 +220,8 @@ model MovimientoStock {
 
 model Carrito {
   id        Int           @id @default(autoincrement())
-  usuarioId Int           @unique
-  usuario   Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId Int           @unique
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     ItemCarrito[]
   updatedAt DateTime      @updatedAt
 }
@@ -260,16 +260,16 @@ model Cupon {
   pedidos Pedido[]
 }
 
-// Registro de qué usuario usó qué cupón en qué pedido (evita reuso indebido)
+// Registro de qué user usó qué cupón en qué pedido (evita reuso indebido)
 model UsoCupon {
   id        Int      @id @default(autoincrement())
   cuponId   Int
   cupon     Cupon    @relation(fields: [cuponId], references: [id], onDelete: Cascade)
-  usuarioId Int
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId Int
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@unique([cuponId, usuarioId])
+  @@unique([cuponId, userId])
 }
 
 // =========================================================
@@ -278,8 +278,8 @@ model UsoCupon {
 
 model Pedido {
   id                 Int          @id @default(autoincrement())
-  usuarioId          Int
-  usuario            Usuario      @relation(fields: [usuarioId], references: [id])
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id])
   estado             EstadoPedido @default(PENDIENTE)
   subtotal           Decimal      @db.Decimal(10, 2)
   descuento          Decimal      @default(0) @db.Decimal(10, 2)
@@ -298,7 +298,7 @@ model Pedido {
   items ItemPedido[]
   pago  Pago?
 
-  @@index([usuarioId])
+  @@index([userId])
   @@index([estado])
 }
 
@@ -339,19 +339,19 @@ model Pago {
 
 model Wishlist {
   id         Int      @id @default(autoincrement())
-  usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   productoId Int
   producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
 
-  @@unique([usuarioId, productoId])
+  @@unique([userId, productoId])
 }
 
 model Resena {
   id         Int      @id @default(autoincrement())
-  usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   productoId Int
   producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
   puntuacion Int // 1-5
@@ -359,6 +359,6 @@ model Resena {
   aprobada   Boolean  @default(true) // por si quieres moderar reseñas
   createdAt  DateTime @default(now())
 
-  @@unique([usuarioId, productoId])
+  @@unique([userId, productoId])
   @@index([productoId])
 }

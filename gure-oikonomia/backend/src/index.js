@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import authRoutes from './routes/auth.routes.js';
 
 // Cargar variables de entorno del archivo .env
 dotenv.config();
@@ -45,7 +46,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // =========================================================
-// RUTAS DE PRUEBA Y CONTROL
+// RUTAS
 // =========================================================
 
 // Ruta base para comprobar que el servidor responde correctamente
@@ -57,6 +58,20 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+app.use('/api/auth', authRoutes);
+
+// =========================================================
+// ERROR HANDLER GLOBAL
+// =========================================================
+
+// Debe ir DESPUÉS de todas las rutas. Captura cualquier error lanzado con next(error)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || 'Error interno del servidor';
+  res.status(status).json({ ok: false, error: message });
+});
+
 // =========================================================
 // ARRANQUE DEL SERVIDOR
 // =========================================================
@@ -64,4 +79,3 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
   console.log(`📌 Prueba el estado en: http://localhost:${PORT}/api/status`);
 });
-
