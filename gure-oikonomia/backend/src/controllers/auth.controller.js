@@ -63,38 +63,38 @@ const login = async (req, res, next) => {
 
 const logout = (req, res, next) => {
     try {
-        res.clearCookie("token")
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        };
+
+        res.clearCookie("token", cookieOptions);
+
         res.json({
             ok: true,
             message: "Sesión cerrada",
-        }) //no hay que indicar qué usuario es el que cierra sesión, solo borra la cookie
+        });
     } catch (error) {
         next(error);
     }
-} //buena práctica de cara a front-end que aunque des varios clicks en cerrar sesión siga saliendo "Sesión cerrada" y no dé error (endpoint silencioso e idempotente)
+};
 
-const getProfile = (req, res) => {
-    res.json({
-        ok: true,
-        data: {
-            id: req.user.id,
-            email: req.user.email,
-            role: req.user.role,
-        },
-    })
-}
-
-const getAdmin = (req, res) => {
-    res.json({
-        ok: true,
-        message: `Bienvenido al panel de admin, ${req.user.email}`,
-    })
+const meController = async function (req, res, next) {
+    try {
+        const user = await authService.getMe(req.user.id);
+        res.json({
+            ok: true,
+            data: user,
+        });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export const authController = {
     register,
     login,
     logout,
-    getProfile,
-    getAdmin,
+    meController,
 }
